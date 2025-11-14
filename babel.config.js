@@ -7,7 +7,9 @@ module.exports = function (api) {
         'module-resolver',
         {
           alias: {
-            '@': '.'
+            '@': '.',
+            'react-native-gesture-handler/lib/module/PlatformConstants': './lib/patches/RNGHPlatformConstants',
+            'react-native-gesture-handler/lib/commonjs/PlatformConstants': './lib/patches/RNGHPlatformConstants',
           }
         }
       ]

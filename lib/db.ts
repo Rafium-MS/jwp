@@ -1,6 +1,6 @@
 import * as SQLite from "expo-sqlite";
 
-type BindParams = SQLite.SQLiteBindParameter[];
+type BindParams = SQLite.SQLiteBindParams;
 
 let databasePromise: Promise<SQLite.SQLiteDatabase> | null = null;
 let initPromise: Promise<void> | null = null;
