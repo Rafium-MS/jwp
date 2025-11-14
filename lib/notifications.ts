@@ -1,5 +1,11 @@
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+import timezone from 'dayjs/plugin/timezone';
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 export async function ensureNotificationPermission() {
   if (!Device.isDevice) return false;
@@ -13,8 +19,10 @@ export async function ensureNotificationPermission() {
 
 export async function scheduleAlarm(title: string, whenMs: number, data?: any) {
   await ensureNotificationPermission();
+  const tz = dayjs.tz.guess();
+  const triggerDate = dayjs(whenMs).tz(tz).toDate();
   return Notifications.scheduleNotificationAsync({
     content: { title, body: 'Lembrete', data },
-    trigger: { date: new Date(whenMs) } // dispara no horário exato
+    trigger: { date: triggerDate } // dispara no horário exato
   });
 }
