@@ -64,3 +64,21 @@ npm run ios
 
 # Gera build de preview (EAS)
 npm run build
+
+---
+
+## 📱 Compatibilidade com o Expo Go
+
+Se ao abrir o projeto no aplicativo **Expo Go** você receber o erro
+`Project is incompatible with this version of Expo Go`, isso significa que a
+versão instalada do Expo Go (atualmente distribuída com o SDK 54) não é
+compatível com o SDK 51 utilizado neste repositório. Para continuar usando o
+app existem duas opções:
+
+1. **Atualizar o projeto para o SDK 54** seguindo o guia oficial da Expo:
+   https://docs.expo.dev/workflow/upgrading-expo-sdk-walkthrough/
+2. **Instalar o Expo Go compatível com o SDK 51** através do link direto
+   disponibilizado pela Expo: https://expo.dev/go?sdkVersion=51&platform=android&device=true
+
+Enquanto a atualização para o SDK 54 não for concluída, utilize a segunda
+opção para testar o aplicativo em dispositivos físicos.
