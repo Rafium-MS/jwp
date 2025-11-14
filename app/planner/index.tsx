@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   View,
   TextInput,
@@ -43,14 +43,33 @@ export default function Planner() {
   const [error, setError] = useState<string | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
 
-  function load() {
-    const res = db.getAllSync<Task>(
-      "SELECT * FROM tasks ORDER BY done ASC, due_at IS NULL ASC, due_at ASC, id DESC"
-    );
-    setTasks(res);
-  }
+  const fetchTasks = useCallback(
+    () =>
+      db.getAll<Task>(
+        "SELECT * FROM tasks ORDER BY done ASC, due_at IS NULL ASC, due_at ASC, id DESC"
+      ),
+    []
+  );
 
-  useEffect(load, []);
+  const load = useCallback(async () => {
+    const res = await fetchTasks();
+    setTasks(res);
+  }, [fetchTasks]);
+
+  useEffect(() => {
+    let active = true;
+
+    void (async () => {
+      const res = await fetchTasks();
+      if (active) {
+        setTasks(res);
+      }
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, [fetchTasks]);
 
   const formattedWhen = useMemo(
     () => (when != null ? dayjs(when).format("DD/MM/YYYY HH:mm") : null),
@@ -102,7 +121,7 @@ export default function Planner() {
     });
   }
 
-  function addTask() {
+  async function addTask() {
     setError(null);
     const trimmedTitle = title.trim();
     if (!trimmedTitle) {
@@ -114,15 +133,15 @@ export default function Planner() {
       return;
     }
     const now = Date.now();
-    db.runSync(
+    await db.run(
       "INSERT INTO tasks(title, created_at, due_at, alarm_at, done) VALUES(?,?,?,?,0)",
       [trimmedTitle, now, when ?? null, when ?? null]
     );
-    if (when != null) scheduleAlarm(trimmedTitle, when, { kind: "task" });
+    if (when != null) await scheduleAlarm(trimmedTitle, when, { kind: "task" });
     setTitle("");
     applyWhen(null);
     setShowIOSPicker(false);
-    load();
+    await load();
   }
 
   return (

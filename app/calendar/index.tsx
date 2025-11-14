@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { View, Text, TextInput, FlatList, StyleSheet } from "react-native";
 
 import { PrimaryButton } from "@/components/PrimaryButton";
@@ -22,19 +22,38 @@ export default function Calendar() {
   const [end, setEnd] = useState<number>(Date.now() + 60 * 60 * 1000);
   const [items, setItems] = useState<Event[]>([]);
 
-  function load() {
-    const res = db.getAllSync<Event>("SELECT * FROM events ORDER BY starts_at ASC");
-    setItems(res);
-  }
-  useEffect(load, []);
+  const fetchEvents = useCallback(
+    () => db.getAll<Event>("SELECT * FROM events ORDER BY starts_at ASC"),
+    []
+  );
 
-  function add() {
-    db.runSync(
+  const load = useCallback(async () => {
+    const res = await fetchEvents();
+    setItems(res);
+  }, [fetchEvents]);
+
+  useEffect(() => {
+    let active = true;
+
+    void (async () => {
+      const res = await fetchEvents();
+      if (active) {
+        setItems(res);
+      }
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, [fetchEvents]);
+
+  async function add() {
+    await db.run(
       "INSERT INTO events(title, starts_at, ends_at, created_at) VALUES(?,?,?,?)",
       [title, start, end, Date.now()]
     );
     setTitle("");
-    load();
+    await load();
   }
 
   return (
