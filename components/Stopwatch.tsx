@@ -5,19 +5,48 @@ export default function Stopwatch({ onSave }: { onSave:(durationSec:number)=>voi
   const [running, setRunning] = useState(false);
   const [start, setStart] = useState<number | null>(null);
   const [elapsed, setElapsed] = useState(0);
-  const raf = useRef<number | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  function tick() {
-    if (running && start) setElapsed(Date.now() - start);
-    raf.current = requestAnimationFrame(tick);
+  useEffect(() => {
+    if (!running || start === null) {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+      return;
+    }
+
+    setElapsed(Date.now() - start);
+    intervalRef.current = setInterval(() => {
+      setElapsed(Date.now() - start);
+    }, 1000);
+
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+  }, [running, start]);
+
+  function startTimer() {
+    setElapsed(0);
+    setStart(Date.now());
+    setRunning(true);
   }
-  useEffect(()=>{ raf.current = requestAnimationFrame(tick); return ()=>raf.current && cancelAnimationFrame(raf.current); }, [running, start]);
 
-  function startTimer() { setStart(Date.now()); setRunning(true); }
   function stopTimer() {
-    if (!running || !start) return;
-    const durSec = Math.round((Date.now() - start)/1000);
-    setRunning(false); setStart(null); setElapsed(0); onSave(durSec);
+    if (!running || start === null) return;
+    const durationMs = Date.now() - start;
+    const durSec = Math.round(durationMs / 1000);
+    setElapsed(durationMs);
+    setRunning(false);
+    setStart(null);
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+    onSave(durSec);
   }
 
   const s = Math.floor(elapsed/1000);
