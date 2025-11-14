@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { FlatList, StyleSheet, Text, TextInput, View } from "react-native";
 
 import Stopwatch from "@/components/Stopwatch";
@@ -17,21 +17,41 @@ export default function Timer() {
   const [notes, setNotes] = useState("");
   const [list, setList] = useState<Session[]>([]);
 
-  function load() {
-    const r = db.getAllSync<Session>(
-      "SELECT id, duration_sec, notes, created_at FROM sessions ORDER BY id DESC"
-    );
-    setList(r);
-  }
-  useEffect(load, []);
+  const fetchSessions = useCallback(
+    () =>
+      db.getAll<Session>(
+        "SELECT id, duration_sec, notes, created_at FROM sessions ORDER BY id DESC"
+      ),
+    []
+  );
 
-  function save(durSec: number) {
-    db.runSync(
+  const load = useCallback(async () => {
+    const r = await fetchSessions();
+    setList(r);
+  }, [fetchSessions]);
+
+  useEffect(() => {
+    let active = true;
+
+    void (async () => {
+      const r = await fetchSessions();
+      if (active) {
+        setList(r);
+      }
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, [fetchSessions]);
+
+  async function save(durSec: number) {
+    await db.run(
       "INSERT INTO sessions(started_at, ended_at, duration_sec, notes) VALUES(?,?,?,?)",
       [Date.now() - durSec * 1000, Date.now(), durSec, notes || null]
     );
     setNotes("");
-    load();
+    await load();
   }
 
   return (

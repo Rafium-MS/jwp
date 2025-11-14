@@ -4,7 +4,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import { tokens } from "@/theme/tokens";
 
 type StopwatchProps = {
-  onSave: (durationSec: number) => void;
+  onSave: (durationSec: number) => void | Promise<void>;
 };
 
 export default function Stopwatch({ onSave }: StopwatchProps) {
@@ -52,7 +52,7 @@ export default function Stopwatch({ onSave }: StopwatchProps) {
       clearInterval(intervalRef.current);
       intervalRef.current = null;
     }
-    onSave(durSec);
+    void onSave(durSec);
   }
 
   const seconds = Math.floor(elapsed / 1000);

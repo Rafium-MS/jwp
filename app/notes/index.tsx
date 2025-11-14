@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { View, TextInput, FlatList, Text, StyleSheet } from "react-native";
 
 import { PrimaryButton } from "@/components/PrimaryButton";
@@ -13,23 +13,43 @@ export default function Notes() {
   const [body, setBody] = useState("");
   const [items, setItems] = useState<Note[]>([]);
 
-  function load() {
-    const r = db.getAllSync<Note>(
-      "SELECT id, title, body, updated_at FROM notes ORDER BY updated_at DESC"
-    );
-    setItems(r);
-  }
-  useEffect(load, []);
+  const fetchNotes = useCallback(
+    () =>
+      db.getAll<Note>(
+        "SELECT id, title, body, updated_at FROM notes ORDER BY updated_at DESC"
+      ),
+    []
+  );
 
-  function add() {
+  const load = useCallback(async () => {
+    const r = await fetchNotes();
+    setItems(r);
+  }, [fetchNotes]);
+
+  useEffect(() => {
+    let active = true;
+
+    void (async () => {
+      const r = await fetchNotes();
+      if (active) {
+        setItems(r);
+      }
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, [fetchNotes]);
+
+  async function add() {
     const now = Date.now();
-    db.runSync(
+    await db.run(
       "INSERT INTO notes(title, body, created_at, updated_at) VALUES(?,?,?,?)",
       [title || null, body || null, now, now]
     );
     setTitle("");
     setBody("");
-    load();
+    await load();
   }
 
   return (

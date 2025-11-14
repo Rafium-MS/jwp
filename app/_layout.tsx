@@ -14,7 +14,7 @@ Notifications.setNotificationHandler({
 
 export default function Layout() {
   useEffect(() => {
-    initDb();
+    void initDb();
     void ensureAndroidChannels();
   }, []);
 

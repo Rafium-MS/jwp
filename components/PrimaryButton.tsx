@@ -4,7 +4,7 @@ import { tokens } from "@/theme/tokens";
 
 type PrimaryButtonProps = {
   title: string;
-  onPress: () => void;
+  onPress: () => void | Promise<void>;
   disabled?: boolean;
   style?: StyleProp<ViewStyle>;
 };
