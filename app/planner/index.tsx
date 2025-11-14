@@ -2,11 +2,11 @@ import { useEffect, useMemo, useState } from "react";
 import {
   View,
   TextInput,
-  Button,
   Text,
   FlatList,
   Platform,
   Pressable,
+  StyleSheet,
 } from "react-native";
 import DateTimePicker, {
   DateTimePickerAndroid,
@@ -15,15 +15,27 @@ import DateTimePicker, {
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
+
+import { PrimaryButton } from "@/components/PrimaryButton";
+import { TaskItem } from "@/components/TaskItem";
 import { db } from "@/lib/db";
 import { scheduleAlarm } from "@/lib/notifications";
+import { tokens } from "@/theme/tokens";
 
-type Task = { id:number; title:string; notes?:string; due_at?:number; alarm_at?:number; done:number; };
+type Task = {
+  id: number;
+  title: string;
+  notes?: string;
+  due_at?: number;
+  alarm_at?: number;
+  done: number;
+};
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
 export default function Planner() {
+  const placeholderColor = "rgba(231,245,255,0.5)";
   const [title, setTitle] = useState("");
   const [when, setWhen] = useState<number | null>(null);
   const [scheduledDate, setScheduledDate] = useState<Date | null>(null);
@@ -114,60 +126,121 @@ export default function Planner() {
   }
 
   return (
-    <View style={{ padding: 16, gap: 12 }}>
-      <TextInput
-        placeholder="Nova tarefa"
-        value={title}
-        onChangeText={setTitle}
-        style={{ borderWidth: 1, padding: 8, borderRadius: 8 }}
-      />
-      <View style={{ gap: 8 }}>
-        <Pressable
-          onPress={() => {
-            if (Platform.OS === "ios") {
-              setShowIOSPicker((prev) => !prev);
-            } else {
-              openAndroidPicker();
-            }
-          }}
-          style={{
-            borderWidth: 1,
-            borderRadius: 8,
-            padding: 12,
-            backgroundColor: "#fff",
-          }}
-        >
-          <Text style={{ color: formattedWhen ? "#000" : "#666" }}>
-            {formattedWhen ?? "Selecionar data e hora"}
-          </Text>
-        </Pressable>
-        {scheduledDate && (
-          <Button title="Limpar data" onPress={() => applyWhen(null)} />
-        )}
-        {Platform.OS === "ios" && showIOSPicker ? (
-          <DateTimePicker
-            mode="datetime"
-            value={scheduledDate ?? new Date()}
-            onChange={handleIOSChange}
-            display="spinner"
-            minuteInterval={1}
-          />
-        ) : null}
+    <View style={styles.screen}>
+      <Text style={styles.heading}>Nova tarefa</Text>
+      <View style={styles.formGroup}>
+        <TextInput
+          placeholder="Nova tarefa"
+          placeholderTextColor={placeholderColor}
+          value={title}
+          onChangeText={setTitle}
+          style={styles.input}
+        />
+        <View style={styles.whenGroup}>
+          <Pressable
+            onPress={() => {
+              if (Platform.OS === "ios") {
+                setShowIOSPicker((prev) => !prev);
+              } else {
+                openAndroidPicker();
+              }
+            }}
+            style={({ pressed }) => [
+              styles.dateTrigger,
+              pressed && styles.dateTriggerPressed,
+            ]}
+          >
+            <Text style={styles.dateTriggerText}>
+              {formattedWhen ?? "Selecionar data e hora"}
+            </Text>
+          </Pressable>
+          {scheduledDate ? (
+            <Pressable onPress={() => applyWhen(null)} style={styles.clearButton}>
+              <Text style={styles.clearButtonText}>Limpar data</Text>
+            </Pressable>
+          ) : null}
+          {Platform.OS === "ios" && showIOSPicker ? (
+            <DateTimePicker
+              mode="datetime"
+              value={scheduledDate ?? new Date()}
+              onChange={handleIOSChange}
+              display="spinner"
+              minuteInterval={1}
+            />
+          ) : null}
+        </View>
+        {error ? <Text style={styles.error}>{error}</Text> : null}
+        <PrimaryButton title="Adicionar" onPress={addTask} />
       </View>
-      {error ? <Text style={{ color: "#c00" }}>{error}</Text> : null}
-      <Button title="Adicionar" onPress={addTask} />
       <FlatList
+        contentContainerStyle={styles.listContent}
         data={tasks}
-        keyExtractor={i=>String(i.id)}
-        renderItem={({item})=>(
-          <View style={{ padding:12, borderWidth:1, borderRadius:8, marginTop:8 }}>
-            <Text style={{ fontWeight:"600" }}>{item.title}</Text>
-            {item.due_at ? (
-              <Text>Vence: {dayjs(item.due_at).format("DD/MM/YYYY HH:mm")}</Text>
-            ) : null}
-          </View>
+        keyExtractor={(item) => String(item.id)}
+        renderItem={({ item }) => (
+          <TaskItem title={item.title} dueAt={item.due_at} />
         )}
       />
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+    backgroundColor: tokens.color.bg,
+    padding: tokens.spacing * 1.5,
+    gap: tokens.spacing,
+  },
+  heading: {
+    color: tokens.color.text,
+    fontSize: 20,
+    fontWeight: "700",
+  },
+  formGroup: {
+    gap: tokens.spacing,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: tokens.color.border,
+    backgroundColor: tokens.color.card,
+    borderRadius: tokens.radius,
+    padding: tokens.spacing,
+    color: tokens.color.text,
+  },
+  whenGroup: {
+    gap: tokens.spacing * 0.75,
+  },
+  dateTrigger: {
+    borderWidth: 1,
+    borderColor: tokens.color.border,
+    borderRadius: tokens.radius,
+    padding: tokens.spacing,
+    backgroundColor: tokens.color.card,
+  },
+  dateTriggerPressed: {
+    opacity: 0.85,
+  },
+  dateTriggerText: {
+    color: tokens.color.text,
+    opacity: 0.8,
+  },
+  clearButton: {
+    alignSelf: "flex-start",
+    paddingHorizontal: tokens.spacing,
+    paddingVertical: tokens.spacing * 0.5,
+    borderRadius: tokens.radius,
+    borderWidth: 1,
+    borderColor: tokens.color.border,
+  },
+  clearButtonText: {
+    color: tokens.color.accent,
+    fontWeight: "600",
+  },
+  error: {
+    color: "#ff6b6b",
+  },
+  listContent: {
+    gap: tokens.spacing,
+    paddingTop: tokens.spacing,
+  },
+});

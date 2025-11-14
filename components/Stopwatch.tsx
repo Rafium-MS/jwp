@@ -1,7 +1,13 @@
 import { useEffect, useRef, useState } from "react";
-import { View, Text, Button } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
-export default function Stopwatch({ onSave }: { onSave:(durationSec:number)=>void }) {
+import { tokens } from "@/theme/tokens";
+
+type StopwatchProps = {
+  onSave: (durationSec: number) => void;
+};
+
+export default function Stopwatch({ onSave }: StopwatchProps) {
   const [running, setRunning] = useState(false);
   const [start, setStart] = useState<number | null>(null);
   const [elapsed, setElapsed] = useState(0);
@@ -49,14 +55,44 @@ export default function Stopwatch({ onSave }: { onSave:(durationSec:number)=>voi
     onSave(durSec);
   }
 
-  const s = Math.floor(elapsed/1000);
-  const mm = String(Math.floor(s/60)).padStart(2,'0');
-  const ss = String(s%60).padStart(2,'0');
+  const seconds = Math.floor(elapsed / 1000);
+  const mm = String(Math.floor(seconds / 60)).padStart(2, "0");
+  const ss = String(seconds % 60).padStart(2, "0");
 
   return (
-    <View style={{ alignItems:"center", gap:8 }}>
-      <Text style={{ fontSize:48, fontWeight:"700" }}>{mm}:{ss}</Text>
-      {!running ? <Button title="Iniciar" onPress={startTimer}/> : <Button title="Parar" onPress={stopTimer}/>}
+    <View style={styles.container}>
+      <Text style={styles.time}>{mm}:{ss}</Text>
+      <Pressable
+        onPress={running ? stopTimer : startTimer}
+        style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}
+      >
+        <Text style={styles.buttonText}>{running ? "Parar" : "Iniciar"}</Text>
+      </Pressable>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    alignItems: "center",
+    gap: tokens.spacing,
+  },
+  time: {
+    fontSize: 48,
+    fontWeight: "700",
+    color: tokens.color.text,
+  },
+  button: {
+    backgroundColor: tokens.color.accent,
+    paddingHorizontal: tokens.spacing * 2,
+    paddingVertical: tokens.spacing,
+    borderRadius: tokens.radius,
+  },
+  buttonPressed: {
+    opacity: 0.9,
+  },
+  buttonText: {
+    color: tokens.color.bg,
+    fontWeight: "600",
+  },
+});
