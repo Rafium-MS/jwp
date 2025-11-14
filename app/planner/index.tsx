@@ -11,7 +11,9 @@ export default function Planner() {
   const [tasks, setTasks] = useState<Task[]>([]);
 
   function load() {
-    const res = db.getAllSync<Task>("SELECT * FROM tasks ORDER BY done, due_at NULLS LAST, id DESC");
+    const res = db.getAllSync<Task>(
+      "SELECT * FROM tasks ORDER BY done ASC, due_at IS NULL ASC, due_at ASC, id DESC"
+    );
     setTasks(res);
   }
 
