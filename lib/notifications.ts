@@ -21,8 +21,13 @@ export async function scheduleAlarm(title: string, whenMs: number, data?: any) {
   await ensureNotificationPermission();
   const tz = dayjs.tz.guess();
   const triggerDate = dayjs(whenMs).tz(tz).toDate();
+  const trigger: Notifications.DateTriggerInput = {
+    type: Notifications.SchedulableTriggerInputTypes.DATE,
+    date: triggerDate,
+  };
+
   return Notifications.scheduleNotificationAsync({
     content: { title, body: 'Lembrete', data },
-    trigger: { date: triggerDate } // dispara no horário exato
+    trigger,
   });
 }
